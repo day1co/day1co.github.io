@@ -35,8 +35,19 @@ if (require.main === module) {
 }
 
 async function main(args) {
+  log('args=', args);
+
   const config = await loadConfig();
-  await generate(config);
+
+  const srcDir = path.resolve(config.baseDir, config.srcDir);
+  const outDir = path.resolve(config.baseDir, config.outDir);
+  const assetDir = path.resolve(srcDir, config.assetDir);
+  const pageDir = path.resolve(srcDir, config.pageDir);
+
+  const context = { ...config, srcDir, outDir, assetDir, pageDir };
+
+  await generate(context);
+  await watch(context);
 }
 
 async function loadConfig(configFile) {
@@ -47,23 +58,26 @@ async function loadConfig(configFile) {
   }
 }
 
-async function generate(config) {
-  const srcDir = path.resolve(config.baseDir, config.srcDir);
-  const outDir = path.resolve(config.baseDir, config.outDir);
+async function generate(context) {
+  const { srcDir, outDir, assetDir, pageDir } = context;
 
   log(`generate: ${srcDir} -> ${outDir}`);
 
   await cleanOutput(outDir);
-
-  const assetDir = path.resolve(srcDir, config.assetDir);
   await copyAssets(assetDir, outDir);
-
-  const context = {
-    site: config.site,
-  };
-
-  const pageDir = path.resolve(srcDir, config.pageDir);
   await renderPages(pageDir, outDir, context);
+}
+
+async function watch(context) {
+  const { srcDir } = context;
+
+  log(`watch: ${srcDir}`);
+  const watcher = await fsp.watch(srcDir, { recursive: true });
+  for await (const event of watcher) {
+    log('watch: ', event);
+    // TODO: process the modified file only
+    await generate(context);
+  }
 }
 
 async function cleanOutput(outDir) {
@@ -94,6 +108,12 @@ async function renderPages(pageDir, outDir, context) {
       ext: '.html'
     });
     log(`\t+ ${layoutFile} -> ${pageOutFile}`);
+
+    if (name === 'index') {
+      page.url = `${context.site.url}/${path.relative(outDir, pageOutDir)}`;
+    } else {
+      page.url = `${context.site.url}/${path.relative(outDir, pageOutFile)}`;
+    }
 
     const html = ejs.render(layoutHtml, { ...context, page });
 

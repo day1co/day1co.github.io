@@ -6,6 +6,7 @@
   "scripts": {
     "start": "npm run build",
     "build": "node index.js",
+    "serve": "npx http-server out",
     "deploy": "gh-pages -d out"
   },
   "dependencies": {
