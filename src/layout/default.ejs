@@ -1,17 +1,40 @@
 <!doctype html>
-<html>
+<html lang="ko">
   <head>
     <meta charset="utf-8">
-    <title><%= page.title ? page.title + ' - ' : '' %>DAY1 Company Tech Blog</title>
-	  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism.min.css" rel="stylesheet">
+    <title><%= page.title ? page.title + ' - ' : '' %><%= site.title %></title>
+
+    <meta name="title" content="<%= page.title %>">
+    <meta name="description" content="<%= page.description %>">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<%= page.url || site.url %>">
+    <meta property="og:title" content="<%= page.title || site.title %>">
+    <meta property="og:description" content="<%= page.description || site.description %>">
+    <meta property="og:image" content="<%= page.image || site.image %>">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="<%= page.url || site.url %>">
+    <meta property="twitter:title" content="<%= page.title || site.title %>">
+    <meta property="twitter:description" content="<%= page.description || site.description %>">
+    <meta property="twitter:image" content="<%= page.image || site.image %>">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
+    <link href="/style.css" rel="stylesheet">
   </head>
   <body>
-    <!--<header>header</header>-->
+    <header>
+      <nav>
+       <a href="/">홈</a>
+       <a href="/about">소개</a>
+      </nav>
+    </header>
     <main><%- page.main %></main>
-    <!--<aside>aside<aside>-->
-    <!--<footer>footer</footer>-->
+    <aside><aside>
+    <footer>
+      <div>Copyright &copy; 2022 DAY1 Company Inc. All rights reserved.</div>
+    </footer>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/plugins/autoloader/prism-autoloader.min.js"></script>
   </body>

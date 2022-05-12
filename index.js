@@ -11,6 +11,12 @@ const DEF_CONFIG = {
   outDir: 'out',
   assetDir: 'asset',
   pageDir: 'page',
+  site: {
+    url: 'https://day1co.github.io',
+    title: 'DAY1 COMPANY Tech Blog',
+    description: 'Development for Life Changing Education',
+    image: '/favicon.png',
+  },
 };
 
 function log(...args) {
@@ -52,8 +58,12 @@ async function generate(config) {
   const assetDir = path.resolve(srcDir, config.assetDir);
   await copyAssets(assetDir, outDir);
 
+  const context = {
+    site: config.site,
+  };
+
   const pageDir = path.resolve(srcDir, config.pageDir);
-  await renderPages(pageDir, outDir);
+  await renderPages(pageDir, outDir, context);
 }
 
 async function cleanOutput(outDir) {
@@ -67,7 +77,7 @@ async function copyAssets(assetDir, outDir) {
   await fsp.cp(assetDir, outDir, { recursive: true });
 }
 
-async function renderPages(pageDir, outDir) {
+async function renderPages(pageDir, outDir, context) {
   log(`renderPages: ${pageDir} -> ${outDir}`);
   const pageFiles = await collectFiles(pageDir);
   for (const pageFile of pageFiles) {
@@ -85,7 +95,7 @@ async function renderPages(pageDir, outDir) {
     });
     log(`\t+ ${layoutFile} -> ${pageOutFile}`);
 
-    const html = ejs.render(layoutHtml, { page });
+    const html = ejs.render(layoutHtml, { ...context, page });
 
     await mkdirp(pageOutDir);
     await fsp.writeFile(pageOutFile, html, 'utf8');
