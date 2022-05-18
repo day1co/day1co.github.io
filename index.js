@@ -1,16 +1,17 @@
 const fsp = require('fs/promises');
 const path = require('path');
 const ejs = require('ejs');
-const marked = require('marked');
+const MarkdownIt = require('markdown-it');
 const frontMatter = require('front-matter');
 
 const DEF_CONFIG_FILE = './config.js';
 const DEF_CONFIG = {
   baseDir: '.',
-  srcDir: 'src',
-  outDir: 'out',
-  assetDir: 'asset',
-  pageDir: 'page',
+  srcDir: 'src', // absolute or relative to baseDir
+  outDir: 'out', // absolute or relative to baseDir
+  assetDir: 'asset', // absolute or relative to srcDir
+  pageDir: 'page', // absolute or relative to srcDir
+  layoutDir: 'layout', // absolute or relative to srcDir
   site: {
     url: 'https://day1co.github.io',
     title: 'DAY1 COMPANY Tech Blog',
@@ -43,8 +44,10 @@ async function main(args) {
   const outDir = path.resolve(config.baseDir, config.outDir);
   const assetDir = path.resolve(srcDir, config.assetDir);
   const pageDir = path.resolve(srcDir, config.pageDir);
+  const layoutDir = path.resolve(srcDir, config.layoutDir);
 
-  const context = { ...config, srcDir, outDir, assetDir, pageDir };
+  const context = { ...config, srcDir, outDir, assetDir, pageDir, layoutDir };
+  log('context=', context);
 
   await generate(context);
   await watch(context);
@@ -97,7 +100,7 @@ async function renderPages(pageDir, outDir, context) {
   for (const pageFile of pageFiles) {
     const page = await renderPage(pageFile);
 
-    const layoutFile = `src/layout/${page.layout ?? 'default'}.ejs`;
+    const layoutFile = path.format({ dir: context.layoutDir, name: page.layout ?? 'default', ext: '.ejs' });
     const layoutHtml = await fsp.readFile(layoutFile, 'utf8');
 
     const { dir, name, ext } = path.parse(pageFile);
@@ -144,7 +147,8 @@ async function renderEjsPage(content) {
 
 async function renderMarkdownPage(content) {
   const { body, attributes } = frontMatter(content);
-  return { ...attributes, main: marked.parse(body) };
+  const md = new MarkdownIt();
+  return { ...attributes, main: md.render(body) };
 }
 
 async function collectFiles(parent) {
