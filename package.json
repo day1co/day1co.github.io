@@ -5,16 +5,15 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run build",
-    "build": "node index.js",
+    "build": "node index.js build",
+    "watch": "node index.js watch",
     "serve": "npx http-server out",
-    "deploy": "gh-pages -d out"
+    "deploy": "npx gh-pages -d out"
   },
   "dependencies": {
+    "commander": "^9.2.0",
     "ejs": "^3.1.8",
     "front-matter": "^4.0.2",
     "markdown-it": "^13.0.1"
-  },
-  "devDependencies": {
-    "gh-pages": "^4.0.0"
   }
 }

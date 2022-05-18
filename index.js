@@ -1,5 +1,6 @@
 const fsp = require('fs/promises');
 const path = require('path');
+const { Command } = require('commander');
 const ejs = require('ejs');
 const MarkdownIt = require('markdown-it');
 const frontMatter = require('front-matter');
@@ -36,9 +37,24 @@ if (require.main === module) {
 }
 
 async function main(args) {
-  log('args=', args);
+  const program = new Command();
 
-  const config = await loadConfig();
+  program
+    .option('-c, --config <string>', 'path to config file');
+
+  program
+    .command('build')
+    .action(async () => build(await initContext(program.opts.config)));
+
+  program
+    .command('watch')
+    .action(async () => watch(await initContext(program.opts.config)));
+
+  await program.parseAsync(args);
+}
+
+async function initContext(configFile) {
+  const config = await loadConfig(configFile);
 
   const srcDir = path.resolve(config.baseDir, config.srcDir);
   const outDir = path.resolve(config.baseDir, config.outDir);
@@ -46,14 +62,11 @@ async function main(args) {
   const pageDir = path.resolve(srcDir, config.pageDir);
   const layoutDir = path.resolve(srcDir, config.layoutDir);
 
-  const context = { ...config, srcDir, outDir, assetDir, pageDir, layoutDir };
-  log('context=', context);
-
-  await generate(context);
-  await watch(context);
+  return { ...config, srcDir, outDir, assetDir, pageDir, layoutDir };
 }
 
 async function loadConfig(configFile) {
+  log(`loadConfig: ${configFile}`);
   try {
     return require(configFile);
   } catch(e) {
@@ -61,10 +74,10 @@ async function loadConfig(configFile) {
   }
 }
 
-async function generate(context) {
+async function build(context) {
   const { srcDir, outDir, assetDir, pageDir } = context;
 
-  log(`generate: ${srcDir} -> ${outDir}`);
+  log(`build: ${srcDir} -> ${outDir}`);
 
   await cleanOutput(outDir);
   await copyAssets(assetDir, outDir);
@@ -77,9 +90,9 @@ async function watch(context) {
   log(`watch: ${srcDir}`);
   const watcher = await fsp.watch(srcDir, { recursive: true });
   for await (const event of watcher) {
-    log('watch: ', event);
+    log('\twatch: ', event);
     // TODO: process the modified file only
-    await generate(context);
+    await build(context);
   }
 }
 
@@ -110,13 +123,10 @@ async function renderPages(pageDir, outDir, context) {
       name,
       ext: '.html'
     });
-    log(`\t+ ${layoutFile} -> ${pageOutFile}`);
+    log(`\t${layoutFile} -> ${pageOutFile}`);
 
-    if (name === 'index') {
-      page.url = `${context.site.url}/${path.relative(outDir, pageOutDir)}`;
-    } else {
-      page.url = `${context.site.url}/${path.relative(outDir, pageOutFile)}`;
-    }
+    const pageUrlPath = path.relative(outDir, (name === 'index') ? pageOutDir : pageOutFile);
+    page.url = `${context.site.url}/${pageUrlPath}`;
 
     const html = ejs.render(layoutHtml, { ...context, page });
 
