@@ -21,10 +21,6 @@
     <meta property="twitter:image" content="<%= page.image || site.image %>">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.28.0/themes/prism.min.css" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {};
-    </script>
     <link href="/style.css" rel="stylesheet">
   </head>
   <body>
@@ -32,10 +28,11 @@
       <nav>
        <a href="/">홈</a>
        <a href="/about">소개</a>
+       <a href="/posts">블로그</a>
        <a href="https://day1company.ninehire.site">채용</a>
       </nav>
     </header>
-    <main><%- page.main %></main>
+    <main><%- include(page.layout + '.ejs' ) -%></main>
     <aside></aside>
     <footer>
       <div>Copyright &copy; 2022 <a href="https://day1company.co.kr">DAY1 Company Inc</a>. All rights reserved.</div>

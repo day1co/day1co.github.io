@@ -27,8 +27,9 @@ function log(...args) {
 
 async function mkdirp(dir) {
   try {
-    return await fsp.mkdir(dir, { recrusive: true });
+    return await fsp.mkdir(dir, { recursive: true });
   } catch(e) {
+    console.error(e);
   }
 }
 
@@ -110,28 +111,38 @@ async function copyAssets(assetDir, outDir) {
 async function renderPages(pageDir, outDir, context) {
   log(`renderPages: ${pageDir} -> ${outDir}`);
   const pageFiles = await collectFiles(pageDir);
+  context.posts = [];
+  context.pages = [];
   for (const pageFile of pageFiles) {
     const page = await renderPage(pageFile);
-
-    const layoutFile = path.format({ dir: context.layoutDir, name: page.layout ?? 'default', ext: '.ejs' });
-    const layoutHtml = await fsp.readFile(layoutFile, 'utf8');
-
+    context.pages.push(page);
+    if (page.layout === 'post') {
+      console.log('post found: ', pageFile);
+      context.posts.push(page);
+    }
+    page.file = pageFile;
     const { dir, name, ext } = path.parse(pageFile);
-    const pageOutDir = path.join(outDir, dir.substring(pageDir.length));
-    const pageOutFile = path.format({
-      dir: pageOutDir,
+    page.outDir = path.join(outDir, dir.substring(pageDir.length));
+    page.outFile = path.format({
+      dir: page.outDir,
       name,
       ext: '.html'
     });
-    log(`\t${layoutFile} -> ${pageOutFile}`);
+    if (!page.url) {
+      const pageUrlPath = path.relative(outDir, (name === 'index') ? page.outDir : page.outFile);
+      page.url = `${context.site.url}/${pageUrlPath}`;
+    }
+    if (!page.layout) {
+      page.layout = 'page';
+    }
+  }
+  for (const page of context.pages) {
+    log(`${page.file} + ${page.layout} -> ${page.outFile}`);
 
-    const pageUrlPath = path.relative(outDir, (name === 'index') ? pageOutDir : pageOutFile);
-    page.url = `${context.site.url}/${pageUrlPath}`;
+    const html = await ejs.renderFile(path.join(context.layoutDir, 'default.ejs'), { ...context, page });
 
-    const html = ejs.render(layoutHtml, { ...context, page });
-
-    await mkdirp(pageOutDir);
-    await fsp.writeFile(pageOutFile, html, 'utf8');
+    await mkdirp(page.outDir);
+    await fsp.writeFile(page.outFile, html, 'utf8');
   }
 }
 
